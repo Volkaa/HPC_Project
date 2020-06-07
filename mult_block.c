@@ -108,7 +108,7 @@ void multiply_matrices_block(double *C, double *A, double *B, const int dim, con
 }
 
 
-void fox_algorithm(double *C, double *A, double *B, const int dim, int nb_proc, const int STRIP)
+void fox_algorithm(double *C, double *A, double *B, const int dim, int nb_proc, const int STRIDE)
 {
 	// -----------------------------------------
 	// First, create the grid, communicators, and 
@@ -229,12 +229,12 @@ void fox_algorithm(double *C, double *A, double *B, const int dim, int nb_proc, 
 		if (diag_col == column)
 		{
 			MPI_Bcast(block_A, block_dim*block_dim, MPI_DOUBLE, diag_col, row_comm);
-			multiply_matrices_block(block_C, block_A, block_B, block_dim, STRIP);
+			multiply_matrices_block(block_C, block_A, block_B, block_dim, STRIDE);
 		} 
 		else
 		{
 			MPI_Bcast(temp_A, block_dim*block_dim, MPI_DOUBLE, diag_col, row_comm);
-			multiply_matrices_block(block_C, temp_A, block_B, block_dim, STRIP);
+			multiply_matrices_block(block_C, temp_A, block_B, block_dim, STRIDE);
 		}
 
 		/*if (grid_rank == 2)
@@ -281,14 +281,15 @@ int main (int argc, char* argv[])
 	int provided;
 
 	// Check if the program is correctly called
-	if (argc != 3) 
+	if (argc != 4) 
 	{
-		printf("Usage: %s [M] [nb_proc] \n", argv[0]);
+		printf("Usage: %s [M] [nb_proc] [STRIDE] \n", argv[0]);
 		exit(1);
 	}
 
 	int dim = atoi(argv[1]);
 	int nb_proc = atoi(argv[2]);
+	int STRIDE = atoi(argv[3]);
 
 	MPI_Init_thread(&argc, &argv, MPI_THREAD_SINGLE, &provided);
 
@@ -348,11 +349,10 @@ int main (int argc, char* argv[])
 	}
 	
 	MPI_Barrier(MPI_COMM_WORLD);
-	
-	int STRIP = 32;
+
 	// Fox algorithm
 	t1 = MPI_Wtime();
-	fox_algorithm(C, A, B, dim, nb_proc, STRIP);
+	fox_algorithm(C, A, B, dim, nb_proc, STRIDE);
 	t2 = MPI_Wtime();
 
 	if (rank == 0)

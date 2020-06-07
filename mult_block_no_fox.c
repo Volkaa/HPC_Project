@@ -81,22 +81,22 @@ void multiply_matrices(double *C, double *A, double *B, const int dim)
 }
 
 
-void multiply_matrices_block(double *C, double *A, double *B, const int dim, const int STRIP)
+void multiply_matrices_block(double *C, double *A, double *B, const int dim, const int STRIDE)
 {
-	for (int ii = 0; ii < dim; ii+=STRIP)
+	for (int ii = 0; ii < dim; ii+=STRIDE)
 	{
-		for (int jj = 0; jj < dim; jj+=STRIP)
+		for (int jj = 0; jj < dim; jj+=STRIDE)
 		{
-			for (int kk = 0; kk < dim; kk+=STRIP)
+			for (int kk = 0; kk < dim; kk+=STRIDE)
 			{
-				int imax = min(ii+STRIP, dim);
+				int imax = min(ii+STRIDE, dim);
 				for (int i = ii; i < imax; i++)
 				{
-					int jmax = min(jj+STRIP, dim);
+					int jmax = min(jj+STRIDE, dim);
 					for (int j = jj; j < jmax; j++)
 					{
 						double sum = 0;
-						int kmax = min(kk+STRIP, dim);
+						int kmax = min(kk+STRIDE, dim);
 						for (int k = kk; k < kmax; k++)
 						{
 							sum += A[i*dim+k] * B[k*dim+j];
@@ -117,14 +117,14 @@ int main (int argc, char* argv[])
 	int provided;
 
 	// Check if the program is correctly called
-	if (argc != 2) 
+	if (argc != 3) 
 	{
-		printf("Usage: %s [M] \n", argv[0]);
+		printf("Usage: %s [M] [STRIDE]\n", argv[0]);
 		exit(1);
 	}
 
 	int dim = atoi(argv[1]);
-
+	int STRIDE = atoi(argv[2]);
     //printf("%d %d\n", rank, size);
 
 	// Initialize matrices
@@ -150,7 +150,6 @@ int main (int argc, char* argv[])
 	printf("Matrice B : \n");
 	show_matrice(B, dim);*/
 
-	int STRIP = 30;
 	// Naive multiplication as a reference
 	start_naive = mysecond();
 	multiply_matrices(C_nav, A, B, dim);
@@ -158,7 +157,7 @@ int main (int argc, char* argv[])
 	
 	// Block matrix algorithm
 	start_block = mysecond();
-	multiply_matrices_block(C, A, B, dim, STRIP);
+	multiply_matrices_block(C, A, B, dim, STRIDE);
 	stop_block = mysecond();
 
 	/*printf("Matrice C = AB : \n");
