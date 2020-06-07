@@ -1,4 +1,0 @@
-https://www3.nd.edu/~zxu2/acms60212-40212-S12/Lec-08-1.pdf : MPI_comm_create etc.
-https://shura.shu.ac.uk/18333/1/Kelefouras-HighPerformanceMatrix-MatrixMaultiplications%28AM%29.pdf
-https://csapp.cs.cmu.edu/public/waside/waside-blocking.pdf
-https://www.sciencedirect.com/science/article/pii/S0024379506001595
