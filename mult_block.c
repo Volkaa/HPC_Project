@@ -8,6 +8,12 @@
 
 #define SEED     921
 
+int min(int a, int b) {
+    if (a > b)
+        return b;
+    return a;
+}
+
 double mysecond()
 {
 	struct timeval tp;
@@ -60,7 +66,6 @@ void initialize_matrice_identity(double *M, const int dim)
 
 void multiply_matrices(double *C, double *A, double *B, const int dim)
 {
-//#pragma omp parallel for
 	for (int i = 0 ; i < dim ; i++) 
 	{
 		for (int k = 0 ; k < dim ; k++) 
@@ -74,7 +79,36 @@ void multiply_matrices(double *C, double *A, double *B, const int dim)
 }
 
 
-void fox_algorithm(double *C, double *A, double *B, const int dim, int nb_proc)
+void multiply_matrices_block(double *C, double *A, double *B, const int dim, const int STRIP)
+{
+	for (int ii = 0; ii < dim; ii+=STRIP)
+	{
+		for (int jj = 0; jj < dim; jj+=STRIP)
+		{
+			for (int kk = 0; kk < dim; kk+=STRIP)
+			{
+				int imax = min(ii+STRIP, dim);
+				for (int i = ii; i < imax; i++)
+				{
+					int jmax = min(jj+STRIP, dim);
+					for (int j = jj; j < jmax; j++)
+					{
+						double sum = 0;
+						int kmax = min(kk+STRIP, dim);
+						for (int k = kk; k < kmax; k++)
+						{
+							sum += A[i*dim+k] * B[k*dim+j];
+						}
+						C[i*dim+j] += sum;
+					}
+				}
+			}
+		}
+	}
+}
+
+
+void fox_algorithm(double *C, double *A, double *B, const int dim, int nb_proc, const int STRIP)
 {
 	// -----------------------------------------
 	// First, create the grid, communicators, and 
@@ -195,12 +229,12 @@ void fox_algorithm(double *C, double *A, double *B, const int dim, int nb_proc)
 		if (diag_col == column)
 		{
 			MPI_Bcast(block_A, block_dim*block_dim, MPI_DOUBLE, diag_col, row_comm);
-			multiply_matrices(block_C, block_A, block_B, block_dim);
+			multiply_matrices_block(block_C, block_A, block_B, block_dim, STRIP);
 		} 
 		else
 		{
 			MPI_Bcast(temp_A, block_dim*block_dim, MPI_DOUBLE, diag_col, row_comm);
-			multiply_matrices(block_C, temp_A, block_B, block_dim);
+			multiply_matrices_block(block_C, temp_A, block_B, block_dim, STRIP);
 		}
 
 		/*if (grid_rank == 2)
@@ -273,6 +307,7 @@ int main (int argc, char* argv[])
 		exit(1);
 	}
 
+	//printf("Dim : %d, block_dim : %d\n", dim, (int)(dim/sqrt(nb_proc)));
 	int rank, size;
 
 	MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -314,9 +349,10 @@ int main (int argc, char* argv[])
 	
 	MPI_Barrier(MPI_COMM_WORLD);
 	
+	int STRIP = 32;
 	// Fox algorithm
 	t1 = MPI_Wtime();
-	fox_algorithm(C, A, B, dim, nb_proc);
+	fox_algorithm(C, A, B, dim, nb_proc, STRIP);
 	t2 = MPI_Wtime();
 
 	if (rank == 0)
